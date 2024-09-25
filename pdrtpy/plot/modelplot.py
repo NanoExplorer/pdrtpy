@@ -8,6 +8,8 @@ from matplotlib.lines import Line2D
 import astropy.wcs as wcs
 import astropy.units as u
 
+from matplotlib.cm import ScalarMappable
+
 from .plotbase import PlotBase
 from ..measurement import Measurement
 from .. import pdrutils as utils
@@ -338,9 +340,9 @@ class ModelPlot(PlotBase):
     # sorts by power .  They have a good reason for this (hashing), but it does mean we get sub-optimal unit ordering.
     # There is a possible workaround, but it must be custom for each CompositeUnit.https://github.com/astropy/astropy/issues/1578
     def phasespace(self,identifiers,
-                 nax1_clip=[10,1E7]*u.Unit("cm-3"),
-                 nax2_clip=[10,1E6]*utils.habing_unit,
-                 reciprocal=[False,False],**kwargs):
+                   nax1_clip=[10,1E7]*u.Unit("cm-3"),
+                   nax2_clip=[10,1E6]*utils.habing_unit,
+                   reciprocal=[False,False],**kwargs):
         r'''Plot lines of constant density and radiation field on a ratio-ratio, ratio-intensity, or intensity-intensity map
 
         :param identifiers: list of two identifier tags for the model to plot, e.g., ["OI_63/CO_21", "CII_158"]
@@ -390,7 +392,8 @@ class ModelPlot(PlotBase):
                        'markersize': 8.0,
                        'aspect': 'auto',
                        'bbox_to_anchor':(1.024,1),
-                       'loc':"upper left"
+                       'loc':"upper left",
+                       'leg_fontsize':12
                        }
 
         kwargs_opts.update(kwargs)
@@ -440,6 +443,8 @@ class ModelPlot(PlotBase):
         linesN=[]
         linesG=[]
         # Sort out the axes labels depending on whether reciprocal=True or not.
+        sm1 = ScalarMappable(cmap='viridis')
+        sm1.to_rgba(xi2)  # this automatically sets the range. I can't find a better way for some reason.
         for j in xi2:
             if x_is_log:
                 label=np.round(np.log10(xlin[j].to(nax1_clip.unit).value),1)
@@ -465,8 +470,9 @@ class ModelPlot(PlotBase):
             else:
                 yy=models[1][yi2[0]:yi2[-1]+1,j]
                 self._axis.set_ylabel(m1label)
-            linesN.extend(self._axis.loglog(xx,yy,label=label,lw=2))
-
+            linesN.extend(self._axis.loglog(xx,yy,label=label,lw=2,c=sm1.to_rgba(j)))
+        sm2 = ScalarMappable(cmap='viridis')
+        sm2.to_rgba(yi2)
         for j in yi2:
             if y_is_log:
                 label=np.round(np.log10(ylin[j].to(nax2_clip.unit).value),1)
@@ -480,7 +486,7 @@ class ModelPlot(PlotBase):
                 yy=1/models[1][j,xi2[0]:xi2[-1]+1]
             else:
                 yy=models[1][j,xi2[0]:xi2[-1]+1]
-            linesG.extend(self._axis.loglog(xx,yy,label=label,lw=2,ls='--'))
+            linesG.extend(self._axis.loglog(xx,yy,label=label,lw=2,ls='--',c=sm2.to_rgba(j)))
 
         # plot the input measurement with error bar. Keywords are
         # [m1x,m1y,m2x,m2y,...]
@@ -595,7 +601,9 @@ class ModelPlot(PlotBase):
 
             leg=self._axis.legend(handles,labels,ncol=2, markerfirst=True, 
                                   bbox_to_anchor=kwargs_opts['bbox_to_anchor'],
-                                  loc=kwargs_opts['loc'])
+                                  loc=kwargs_opts['loc'],fontsize=kwargs_opts['leg_fontsize'])
+            self._axis.add_artist(leg)
+            print(":P")
             # trick to remove extra left side space in legend column headers.
             # doesn't completely center the headers, but gets as close as possible
             # See https://stackoverflow.com/questions/44071525/matplotlib-add-titles-to-the-legend-rows/44072076
@@ -605,7 +613,6 @@ class ModelPlot(PlotBase):
         # Put the plot title on if given.
         if kwargs_opts['title'] is not None:
             self._axis.set_title(kwargs_opts['title'])
-
 
     def _get_xy_from_wcs(self,data,quantity=False,linear=False):
         """Get the x,y axis vectors from the WCS of the input data.
