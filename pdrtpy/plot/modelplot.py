@@ -420,7 +420,10 @@ class ModelPlot(PlotBase):
         y_is_log = 'log' in models[0].wcs.wcs.ctype[1]
         # linear and log units are same so doesn't matter which is used for conversion
         dcc=nax1_clip.to(xlog.unit)
-        rcc=nax2_clip.to(ylog.unit)
+
+        ylin = ylin.to(nax2_clip.unit)
+        ylog = np.log10(ylin.value) * nax2_clip.unit
+        rcc=nax2_clip
         # Select the model x,y *indices* within the NAX limits
         xi=np.where((xlin>=dcc[0]) & (xlin<=dcc[1]))[0]
         yi=np.where((ylin>=rcc[0]) & (ylin<=rcc[1]))[0]
@@ -603,7 +606,6 @@ class ModelPlot(PlotBase):
                                   bbox_to_anchor=kwargs_opts['bbox_to_anchor'],
                                   loc=kwargs_opts['loc'],fontsize=kwargs_opts['leg_fontsize'])
             self._axis.add_artist(leg)
-            print(":P")
             # trick to remove extra left side space in legend column headers.
             # doesn't completely center the headers, but gets as close as possible
             # See https://stackoverflow.com/questions/44071525/matplotlib-add-titles-to-the-legend-rows/44072076
