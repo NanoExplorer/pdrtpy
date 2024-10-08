@@ -393,7 +393,8 @@ class ModelPlot(PlotBase):
                        'aspect': 'auto',
                        'bbox_to_anchor':(1.024,1),
                        'loc':"upper left",
-                       'leg_fontsize':12
+                       'leg_fontsize':12,
+                       'colorbar_knob':([],[])
                        }
 
         kwargs_opts.update(kwargs)
@@ -447,7 +448,10 @@ class ModelPlot(PlotBase):
         linesG=[]
         # Sort out the axes labels depending on whether reciprocal=True or not.
         sm1 = ScalarMappable(cmap='viridis')
-        sm1.to_rgba(xi2)  # this automatically sets the range. I can't find a better way for some reason.
+        x_color_range = np.append(xi2,kwargs_opts['colorbar_knob'][0])
+        y_color_range = np.append(yi2,kwargs_opts['colorbar_knob'][1])
+        sm1.to_rgba(x_color_range)  # this automatically sets the range. I can't find a better way for some reason.
+        print(xi2)
         for j in xi2:
             if x_is_log:
                 label=np.round(np.log10(xlin[j].to(nax1_clip.unit).value),1)
@@ -475,7 +479,8 @@ class ModelPlot(PlotBase):
                 self._axis.set_ylabel(m1label)
             linesN.extend(self._axis.loglog(xx,yy,label=label,lw=2,c=sm1.to_rgba(j)))
         sm2 = ScalarMappable(cmap='viridis')
-        sm2.to_rgba(yi2)
+        sm2.to_rgba(y_color_range)
+        print(yi2)
         for j in yi2:
             if y_is_log:
                 label=np.round(np.log10(ylin[j].to(nax2_clip.unit).value),1)
